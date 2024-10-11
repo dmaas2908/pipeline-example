@@ -1,0 +1,13 @@
+# This template is parsed by envsubst, use bash syntax for variables
+FROM alpine:${ALPINE_VER}
+
+RUN apk update && apk add nodejs-current npm
+RUN mkdir /opt/$SVC_FOLDER/
+COPY index.js /opt/$SVC_FOLDER/
+COPY package.json /opt/$SVC_FOLDER/
+RUN chown -R root:root /opt/$SVC_FOLDER/ && chmod 0755 /opt/$SVC_FOLDER/
+RUN chmod 0555 /opt/$SVC_FOLDER/index.js
+WORKDIR /opt/$SVC_FOLDER/
+RUN npm install -f
+
+CMD ["node", "index.js"]
