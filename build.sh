@@ -169,8 +169,8 @@ build_container ()
     return 1
   fi
   
-  #check docker's connection to docker.io and build
-  docker build -t $svcname:$lastcommit ./
+  # build the container - requires being able to connect to docker.io
+  docker build -t $svcname:$lastcommit -t $svcname:latest ./
   if [ $? -ne 0 ] ; then
     echo "Error: Your docker can't be run. If you're running a rootless docker install then your user needs to be a member of the docker group (`id`)." >&2
     cd "$origdir"
@@ -192,8 +192,9 @@ find_latest_alpine_version ()
 	echo $(curl -s "https://registry.hub.docker.com/v2/namespaces/library/repositories/alpine/tags?page=1" | jq | grep -v username | grep name | awk '{print $2}' | grep "[0-9.]" | sed 's/[\",]//g' | head -2 | tail -1 | awk '{print $1}')
 }
 
+
 # This is a wrapper function that enumerates subfolders in the local repo,
-# generates a Dockerfile, then creates an image (which is saved locally)
+# generates a Dockerfile, then creates an image which is saved locally
 build_all_service_containers () 
 {
   local svc=""
