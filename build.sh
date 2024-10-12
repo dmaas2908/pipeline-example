@@ -14,8 +14,8 @@ source ./build.conf
 # non-zero exit code on failure
 precheck_requirements ()
 { 
-  # check for required utilities
-	for i in docker sed git ssh ssh-agent ssh-add envsubst ; 
+	# check for required utilities
+	for i in docker sed git ssh ssh-agent ssh-add envsubst curl jq ; 
 	do
 		if [ -z `which $i` ] ; then
 			echo "Error: required cli utility $i is missing" >&2
@@ -24,8 +24,8 @@ precheck_requirements ()
 	done
 	
 	if [ ! -e "build.conf" -a  ! -e "$SSHKEY" -a ! -e "$DOCKERFILETEMPLATE" ] ; then
-	  echo "Error: A needed file, build.conf, $DOCKERFILETEMPLATE, or the ssh key, can't be found" >&2
-	  exit 1
+		echo "Error: A needed file, build.conf, $DOCKERFILETEMPLATE, or the ssh key, can't be found" >&2
+		exit 1
 	fi
 	
 	echo "System utility dependency check completed successfully"
@@ -48,6 +48,10 @@ download_latest_code ()
   eval `ssh-agent`
   if [ -z "`echo $SSH_AGENT_PID`" ] ; then
   	echo "Error: Unable to get ssh-agent to run" >&2
+  	cd "$origdir"
+	  kill -9 $SSH_AGENT_PID
+ 	  unset SSH_AUTH_SOCK
+ 	  unset SSH_AGENT_PID
 		exit 1
   fi
   ssh-add "$SSHKEY"
@@ -56,10 +60,15 @@ download_latest_code ()
   fi
   
   # test authentication to github
+  echo "Testing our ability to connect to github..."
   ssh -T -oBatchMode=yes git@github.com
   errno=$?
   if [ $errno -eq 255 ] ; then
     echo "Error: Authentication issue connecting to $GITREPOSSH" >&2
+    cd "$origdir"
+    kill -9 $SSH_AGENT_PID
+  	unset SSH_AUTH_SOCK
+ 		unset SSH_AGENT_PID
     exit 1
   fi
  
@@ -87,8 +96,11 @@ download_latest_code ()
     fi
   fi
   
-  # this is important, fixes cwd.
+  # clean up
   cd "$origdir"
+  kill -9 $SSH_AGENT_PID
+  unset SSH_AUTH_SOCK
+  unset SSH_AGENT_PID
 }
 
 # This function creates a _single_ generic dockerfile from a template
@@ -98,7 +110,7 @@ download_latest_code ()
 # returns: error status (0/1)
 generate_default_dockerfile ()
 {
-  local svcfold=`sed 's/^\.\///i' <<< "$1"`  #removes leading ./
+  local svcfold=`sed 's/^\.\///g' <<< "$1"`  #removes leading ./
   local alpinever="$2"
   
   if [ -z "$1" -o ! -d "$LOCALGITREPOPATH/$svcfold" ] ; then
@@ -106,7 +118,7 @@ generate_default_dockerfile ()
     return 1
   fi
   if [ -z "$2" ] ; then 
-  	echo "Error: The alpine linux version is blank or undef" >&2
+  	echo "Error: The alpine linux version is blank or undefined" >&2
   	return 1
   fi
   if [ ! -e "./$DOCKERFILETEMPLATE" ] ; then
@@ -135,13 +147,83 @@ generate_default_dockerfile ()
   return 0
 }
 
-
 # this function builds a docker image tagged with the latest commit id
 # which is saved to the latest image id
-#build_container ()
+# requires: service folder name
+
+build_container ()
+{
+  local svcfold=`sed 's/^\.\///g' <<< "$1"`  #removes leading ./
+  local svcname=`sed 's/_//g' <<< "$svcfold"`   #removes _ from folder name
+	local lastcommit=""
+  local origdir="`pwd`"
+  
+  cd "$LOCALGITREPOPATH/$svcfold"
+  lastcommit="`git rev-parse --short HEAD `"
+  
+  echo "Building container image for $svcfold based on commit $lastcommit"
+  
+  if [ ! -e "./Dockerfile" ] ; then
+    echo "Error: No Dockerfile found in $svcfold, skipping" >&2
+    cd "$origdir"
+    return 1
+  fi
+  
+  #check docker's connection to docker.io and build
+  docker build -t $svcname:$lastcommit ./
+  if [ $? -ne 0 ] ; then
+    echo "Error: Your docker can't be run or possibly connect out successfully. If you're running a rootless docker install then your user needs to be a member of the docker group (`id`)." >&2
+    cd "$origdir"
+    exit 1
+  else
+    echo "Your new container image is $svcname:$lastcommit"
+    docker image ls | grep "$svcname" | grep "$lastcommit"
+  fi
+  
+  cd "$origdir"
+  return 0
+}
+
+
+# Figures out what the latest version of the alpine image is so we can use versions instead of latest
+# requires: nothing,  returns: a string, answer is not provided on stdio
+find_latest_alpine_version () 
+{
+	echo $(curl -s "https://registry.hub.docker.com/v2/namespaces/library/repositories/alpine/tags?page=1" | jq | grep -v username | grep name | awk '{print $2}' | grep "[0-9.]" | sed 's/[\",]//g' | head -2 | tail -1 | awk '{print $1}')
+}
+
+# This is a wrapper function that enumerates subfolders in the local repo,
+# generates a Dockerfile, then creates an image (which is saved locally)
+build_all_service_containers () 
+{
+  local svc=""
+  local latestalpine="`find_latest_alpine_version`"
+  
+  if [ -z "$LOCALGITREPOPATH" ] ; then
+    echo "Error: LOCALGITREPOPATH is empty, can't build service containers" >&2
+    exit 1
+  fi
+  
+  #enumerate through subfolders in $LOCALGITREPOPATH
+  for svc in $( find "$LOCALGITREPOPATH/" -maxdepth 1 -type d | awk -F \/ '{print $NF}' | grep -v -e ^\\. -e ^$ ) ; 
+  do
+    echo "Found service folder $svc"
+    
+    generate_default_dockerfile "$svc" "$latestalpine"
+    if [ $? -ne 0 ] ; then
+      echo "Warning: Service $svc generated an error when creating a Dockerfile" >&2
+    fi
+
+    build_container "$svc"
+    
+  done
+}
+
+
 
 ###### MAIN ######
 precheck_requirements
 download_latest_code
-#cd $LOCALGITREPOPATH
-generate_default_dockerfile service_b "3.20.3"
+build_all_service_containers
+echo "------"
+echo "Build pipeline execution complete"
