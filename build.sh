@@ -172,7 +172,7 @@ build_container ()
   #check docker's connection to docker.io and build
   docker build -t $svcname:$lastcommit ./
   if [ $? -ne 0 ] ; then
-    echo "Error: Your docker can't be run or possibly connect out successfully. If you're running a rootless docker install then your user needs to be a member of the docker group (`id`)." >&2
+    echo "Error: Your docker can't be run. If you're running a rootless docker install then your user needs to be a member of the docker group (`id`)." >&2
     cd "$origdir"
     exit 1
   else
@@ -222,8 +222,10 @@ build_all_service_containers ()
 
 
 ###### MAIN ######
+echo "Build pipeline execution initializing"
+echo
 precheck_requirements
 download_latest_code
 build_all_service_containers
-echo "------"
+echo
 echo "Build pipeline execution complete"
