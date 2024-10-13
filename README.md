@@ -70,4 +70,6 @@ The qa.py script is a simple test validation script. It requires a csv file, whi
 
 I think I've discussed this elsewhere in the README but the main assumptions were that all the pipelines and tests could be run completely automatically and were designed to easily integrate in a professional (non-minikube) environment as well. I may have gone slightly overboard adding bells and whistles to the build process.
 
-Overall I did a number of things to reduce problems. I eschewed the use of latest tags, did quite a bit of error checking, stuff like that.
+Overall I did a number of things to reduce problems. I eschewed the use of latest tags, did quite a bit of error checking, stuff like that. I also made a minor effort to keep things done inside the build pipeline from persisting in unexpected ways after the execution of the script, just in case it's run from the command line. For example, if you enable minikube suport, it'll delete your docker env variables afterwords.
+
+Lastly, I made a serious effort to produce production quality code. I avoided doing anything hackish or tempermental, and made a serious effort to use clean ways of doing things in the build script, like using <<< to modify variables and using envsubst as a templating engine.
