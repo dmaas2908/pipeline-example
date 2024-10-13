@@ -1,4 +1,5 @@
-#Devops take home assignment
+Devops take home assignment
+
 This repository contains a build pipeline script, a deployment manifest, and a qa script.
 
 Index
@@ -10,7 +11,8 @@ Index
 
 dmaas2908 / letmeinbrotha
   
-##Quickstart
+
+Quickstart
 
 First edit build.conf to include variables appropriate for your system.
 
@@ -35,7 +37,7 @@ Lastly, there is a simple QA script to check all the urls and their status codes
 ./qa.sh urls.csv
 
 
-##The build pipeline - build.sh
+The build pipeline - build.sh
 
 This script is a straightforward automated build pipeline written in Bash. It's intended to work as a standalone script or imported directly into jenkins. It requires configuring a number of variables in the build.conf file, and comes with a template for a Dockerfile, which is kept in build-template-Dockerfile. The variables in the template are filled in automatically by the build.sh script and do not need to be configured anywhere.
 
@@ -47,7 +49,7 @@ Docker images are saved locally, in minikube's image list. It would not require 
 
 
 
-##The deployment pipeline, all the terraform scripts
+The deployment pipeline, all the terraform scripts
 
 As requested I wrote a deployment pipeline in terraform. There's not much you need to know to use this. While there's a couple input variables, the only one that's really important is version_tag which is the short commit id/version tag for the git repo and image (I used the same value for both).
 
@@ -60,3 +62,4 @@ terraform apply -var version_tag="034aeba"   #in this case
 
 ##QA script
 
+Not written yet. I'm planning on having a list of urls, their expected status code and something to grep for in a CSV file, but that's prob fancier than it needs to be.
