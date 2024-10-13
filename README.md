@@ -9,8 +9,6 @@ Index
   The QA script
   Architecture & Assumptions
 
-dmaas2908 / letmeinbrotha
-  
 
 Quickstart
 
