@@ -23,6 +23,18 @@ precheck_requirements ()
 		fi
 	done
 	
+	if [ $USE_MINIKUBE_DOCKER = "y" -o $USE_MINIKUBE_DOCKER = "Y" ] ; then
+	  if [ -z `which minikube` ] ; then
+	    echo "Error: USE_MINIKUBE_DOCKER is enabled but no minikube cli utility can be found" >&2
+	    exit 1
+	  fi
+	  if [  -n "`minikube status | grep -e host -e kubelet -e apiserver | grep -v Running`" ] ; then
+	    echo "Error: USE_MINIKUBE_DOCKER is enabled but minikube is probably not running (at least for this user)" >&2
+	    minikube status
+	    exit 1
+	  fi
+	fi
+	
 	if [ ! -e "build.conf" -a  ! -e "$SSHKEY" -a ! -e "$DOCKERFILETEMPLATE" ] ; then
 		echo "Error: A needed file, build.conf, $DOCKERFILETEMPLATE, or the ssh key, can't be found" >&2
 		exit 1
@@ -170,6 +182,10 @@ build_container ()
   fi
   
   # build the container - requires being able to connect to docker.io
+  if [ $USE_MINIKUBE_DOCKER = "y" -o $USE_MINIKUBE_DOCKER = "Y" ] ; then
+    #switch to using the minikube docker by running all the docker-env as a shell statement
+    eval $(minikube docker-env) 
+  fi
   docker build -t $svcname:$lastcommit -t $svcname:latest ./
   if [ $? -ne 0 ] ; then
     echo "Error: Your docker can't be run. If you're running a rootless docker install then your user needs to be a member of the docker group (`id`)." >&2
@@ -180,6 +196,7 @@ build_container ()
     docker image ls | grep "$svcname" | grep "$lastcommit"
   fi
   
+  #clean up
   cd "$origdir"
   return 0
 }
@@ -218,6 +235,8 @@ build_all_service_containers ()
     build_container "$svc"
     
   done
+  
+  
 }
 
 
@@ -228,5 +247,11 @@ echo
 precheck_requirements
 download_latest_code
 build_all_service_containers
+if [ $USE_MINIKUBE_DOCKER = "y" -o $USE_MINIKUBE_DOCKER = "Y" ] ; then 
+  # remove minikube specific docker settings in case this is run from the cli
+  unset MINIKUBE_ACTIVE_DOCKERD
+  unset DOCKER_CERT_PATH
+  unset DOCKER_HOST
+fi
 echo
 echo "Build pipeline execution complete"
