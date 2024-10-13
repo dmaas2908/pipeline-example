@@ -67,7 +67,7 @@ resource "kubernetes_pod" "serviceb" {
 
 resource "kubernetes_service" "servicea-svc" {
 	metadata {
-		name = "service-a-svc"
+		name = "service-a"
 	}
 	spec {
 		selector = {
@@ -84,7 +84,7 @@ resource "kubernetes_service" "servicea-svc" {
 
 resource "kubernetes_service" "serviceb-svc" {
 	metadata {
-		name = "service-b-svc"
+		name = "service-b"
 	}
 	spec {
 		selector = {
@@ -98,3 +98,52 @@ resource "kubernetes_service" "serviceb-svc" {
 		type = "NodePort"
 	}
 }
+
+resource "kubernetes_ingress_v1" "ingress-config" {
+  metadata {
+    name = "ingress-config"
+    annotations = {
+      ingress_class_name = "nginx"
+      "nginx.ingress.kubernetes.io/rewrite-target" = "/$2"
+    }
+  }
+  spec {
+    default_backend {
+      service {
+        name = "service-a"
+        port {
+          number = 3000
+        }
+      }
+    }
+    rule {
+      http {
+        path {
+          path = "/servicea(/|$)(.*)"
+          #path_type = "Prefix"
+          backend {
+            service {
+              name = "service-a"
+              port {
+                number = 3000
+              }
+            }
+          }
+        }
+        path {
+          path = "/serviceb(/|$)(.*)"
+          #path_type = "Prefix"
+          backend {
+            service {
+              name = "service-b"
+              port {
+                number = 8000
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
