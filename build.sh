@@ -14,33 +14,33 @@ source ./build.conf
 # non-zero exit code on failure
 precheck_requirements ()
 { 
-	# check for required utilities
-	for i in docker sed git ssh ssh-agent ssh-add envsubst curl jq ; 
-	do
-		if [ -z `which $i` ] ; then
-			echo "Error: required cli utility $i is missing" >&2
-			exit 1
-		fi
-	done
-	
-	if [ $USE_MINIKUBE_DOCKER = "y" -o $USE_MINIKUBE_DOCKER = "Y" ] ; then
-	  if [ -z `which minikube` ] ; then
-	    echo "Error: USE_MINIKUBE_DOCKER is enabled but no minikube cli utility can be found" >&2
-	    exit 1
-	  fi
-	  if [  -n "`minikube status | grep -e host -e kubelet -e apiserver | grep -v Running`" ] ; then
-	    echo "Error: USE_MINIKUBE_DOCKER is enabled but minikube is probably not running (at least for this user)" >&2
-	    minikube status
-	    exit 1
-	  fi
-	fi
-	
-	if [ ! -e "build.conf" -a  ! -e "$SSHKEY" -a ! -e "$DOCKERFILETEMPLATE" ] ; then
-		echo "Error: A needed file, build.conf, $DOCKERFILETEMPLATE, or the ssh key, can't be found" >&2
-		exit 1
-	fi
-	
-	echo "System utility dependency check completed successfully"
+  # check for required utilities
+  for i in docker sed git ssh ssh-agent ssh-add envsubst curl jq ; 
+  do
+    if [ -z `which $i` ] ; then
+      echo "Error: required cli utility $i is missing" >&2
+      exit 1
+    fi
+  done
+  
+  if [ $USE_MINIKUBE_DOCKER = "y" -o $USE_MINIKUBE_DOCKER = "Y" ] ; then
+    if [ -z `which minikube` ] ; then
+      echo "Error: USE_MINIKUBE_DOCKER is enabled but no minikube cli utility can be found" >&2
+      exit 1
+    fi
+    if [  -n "`minikube status | grep -e host -e kubelet -e apiserver | grep -v Running`" ] ; then
+      echo "Error: USE_MINIKUBE_DOCKER is enabled but minikube is probably not running (at least for this user)" >&2
+      minikube status
+      exit 1
+    fi
+  fi
+  
+  if [ ! -e "build.conf" -a  ! -e "$SSHKEY" -a ! -e "$DOCKERFILETEMPLATE" ] ; then
+    echo "Error: A needed file, build.conf, $DOCKERFILETEMPLATE, or the ssh key, can't be found" >&2
+    exit 1
+  fi
+  
+  echo "System utility dependency check completed successfully"
 }
 
 
@@ -59,12 +59,12 @@ download_latest_code ()
   kill -9 $SSH_AGENT_PID
   eval `ssh-agent`
   if [ -z "`echo $SSH_AGENT_PID`" ] ; then
-  	echo "Error: Unable to get ssh-agent to run" >&2
-  	cd "$origdir"
-	  kill -9 $SSH_AGENT_PID
- 	  unset SSH_AUTH_SOCK
- 	  unset SSH_AGENT_PID
-		exit 1
+    echo "Error: Unable to get ssh-agent to run" >&2
+    cd "$origdir"
+    kill -9 $SSH_AGENT_PID
+     unset SSH_AUTH_SOCK
+     unset SSH_AGENT_PID
+    exit 1
   fi
   ssh-add "$SSHKEY"
   if [ ! $? -eq 0 ] ; then
@@ -79,8 +79,8 @@ download_latest_code ()
     echo "Error: Authentication issue connecting to $GITREPOSSH" >&2
     cd "$origdir"
     kill -9 $SSH_AGENT_PID
-  	unset SSH_AUTH_SOCK
- 		unset SSH_AGENT_PID
+    unset SSH_AUTH_SOCK
+     unset SSH_AGENT_PID
     exit 1
   fi
  
@@ -130,8 +130,8 @@ generate_default_dockerfile ()
     return 1
   fi
   if [ -z "$2" ] ; then 
-  	echo "Error: The alpine linux version is blank or undefined" >&2
-  	return 1
+    echo "Error: The alpine linux version is blank or undefined" >&2
+    return 1
   fi
   if [ ! -e "./$DOCKERFILETEMPLATE" ] ; then
     echo "Error: generate_default_dockerfile can't find the Dockerfile template, $DOCKERFILETEMPLATE. The cwd `pwd` might be misset" 2>&1
@@ -167,7 +167,7 @@ build_container ()
 {
   local svcfold=`sed 's/^\.\///g' <<< "$1"`  #removes leading ./
   local svcname=`sed 's/_//g' <<< "$svcfold"`   #removes _ from folder name
-	local lastcommit=""
+  local lastcommit=""
   local origdir="`pwd`"
   
   cd "$LOCALGITREPOPATH/$svcfold"
@@ -203,10 +203,10 @@ build_container ()
 
 
 # Figures out what the latest version of the alpine image is so we can use versions instead of latest
-# requires: nothing,  returns: a string, answer is not provided on stdio
+# requires: nothing,  returns: nothing, answer is on stdio
 find_latest_alpine_version () 
 {
-	echo $(curl -s "https://registry.hub.docker.com/v2/namespaces/library/repositories/alpine/tags?page=1" | jq | grep -v username | grep name | awk '{print $2}' | grep "[0-9.]" | sed 's/[\",]//g' | head -2 | tail -1 | awk '{print $1}')
+  echo $(curl -s "https://registry.hub.docker.com/v2/namespaces/library/repositories/alpine/tags?page=1" | jq | grep -v username | grep name | awk '{print $2}' | grep "[0-9.]" | sed 's/[\",]//g' | head -2 | tail -1 | awk '{print $1}')
 }
 
 
