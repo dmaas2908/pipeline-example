@@ -1,0 +1,6 @@
+/servicea,200,This is service-a
+/serviceb,200,This is service-b
+/servicea/serviceb,200,service-b
+/servicea/servicea,200,Hello from Service A
+/serviceb/servicea,200,service-a
+/serviceb/serviceb,200,Hello from Service B

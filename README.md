@@ -1,4 +1,4 @@
-Devops take home assignment
+# Devops take home assignment
 
 This repository contains a build pipeline script, a deployment manifest, and a qa script.
 
@@ -10,7 +10,7 @@ Index
   Architecture & Assumptions
 
 
-Quickstart
+## Quickstart
 
 First edit build.conf to include variables appropriate for your system.
 
@@ -32,10 +32,13 @@ terraform apply -var version_tag="6 digit hex code"   #the default is latest as 
 and the containers should be deployed and start as an end result. I didn't have time to do the network ACL stuff, but I was going to apply an egress filter to service-b using a podSelector as is described in "Learn Kubernetes Security" pg. 86. It's a fairly good book.
 
 Lastly, there is a simple QA script to check all the urls and their status codes.
-./qa.sh urls.csv
+./qa.py testdata.csv
+
+There's no deliberately bad data in the testdata.csv file however it has been tested with bad urls and http response codes
 
 
-The build pipeline - build.sh
+
+## The build pipeline - build.sh
 
 This script is a straightforward automated build pipeline written in Bash. It's intended to work as a standalone script or imported directly into jenkins. It requires configuring a number of variables in the build.conf file, and comes with a template for a Dockerfile, which is kept in build-template-Dockerfile. The variables in the template are filled in automatically by the build.sh script and do not need to be configured anywhere.
 
@@ -47,7 +50,7 @@ Docker images are saved locally, in minikube's image list. It would not require 
 
 
 
-The deployment pipeline, all the terraform scripts
+## The deployment pipeline, all the terraform scripts
 
 As requested I wrote a deployment pipeline in terraform. There's not much you need to know to use this. While there's a couple input variables, the only one that's really important is version_tag which is the short commit id/version tag for the git repo and image (I used the same value for both).
 
@@ -58,6 +61,13 @@ terraform init
 terraform apply -var version_tag="034aeba"   #in this case
 
 
-##QA script
+## QA script
 
-Not written yet. I'm planning on having a list of urls, their expected status code and something to grep for in a CSV file, but that's prob fancier than it needs to be.
+The qa.py script is a simple test validation script. It requires a csv file, which is included, which has the urls, expected http response codes, and an expected string from the response seperated by commas. It iterates through the list of test data and counts the number of failures.
+
+
+## Assumptions
+
+I think I've discussed this elsewhere in the README but the main assumptions were that all the pipelines and tests could be run completely automatically and were designed to easily integrate in a professional (non-minikube) environment as well. I may have gone slightly overboard adding bells and whistles to the build process.
+
+Overall I did a number of things to reduce problems. I eschewed the use of latest tags, did quite a bit of error checking, stuff like that.
