@@ -5,7 +5,7 @@
 import sys, re, urllib.request, urllib.parse, subprocess
 
 
-# requires: filename of csv, returns: nested dictionary { element : { str(url), int(httpcode), str(response) } }
+# requires: filename of csv, returns: nested dictionary { int(test_number) : { str(url), int(httpcode), str(response) } }
 def readTestDataFromCSV(filenm):
   i = 0
   with open(filenm, 'r') as file:
