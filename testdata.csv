@@ -1,3 +1,4 @@
+/servicea,403,Deliberately incorrect test
 /servicea,200,This is service-a
 /serviceb,200,This is service-b
 /servicea/serviceb,200,service-b
