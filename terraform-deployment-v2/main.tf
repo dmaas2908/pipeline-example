@@ -9,7 +9,7 @@ resource "kubernetes_pod" "pod-definition" {
 	
 	spec {
 	  container {
-	    image = "${var.image_name_prefix}" + trim(each.key, "-") + ":${var.version_tag}"
+	    image = "${var.image_name_prefix}${trim(each.key, "-")}:${var.version_tag}"
 	    name = "${each.key}-container"
 	    image_pull_policy = "${var.pullfromremote}"
 	    
