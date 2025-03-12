@@ -17,9 +17,7 @@ def readTestDataFromCSV(filenm):
         testdata_dict.update({ i : { 'url' : url, 'httpcode' : int(code), 'response' : text } })
       except NameError:
         testdata_dict = { i : { 'url' : url.strip(), 'httpcode' : int(code.strip()), 'response' : text.strip() } }
-        print("dictionary first line:", testdata_dict)
       i = i + 1
-  print("final dict:", testdata_dict)
   return testdata_dict
       
 # requires: nada, returns: ingress ip from kubectl (str)
