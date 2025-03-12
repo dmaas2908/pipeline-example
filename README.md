@@ -14,6 +14,8 @@ Index
 
 First edit build.conf to include variables appropriate for your system.
 
+Edit: I removed build.conf from the repo entirely because I kept on accidentally recommitting it with the URI for a slightly sensitive github repo. Grepping for uppercase global variables in build.sh should give you a list of variables. Make sure minikube is enabled if you're using minikube.
+
 Minikube needs to be running. The nginx module should be installed and I think the driver should be set to docker
 
 minikube enable nginx
